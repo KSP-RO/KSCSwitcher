@@ -248,67 +248,42 @@ namespace regexKSP
 
         public static PQSCity FindKSC(CelestialBody home)
         {
-            if (home != null)
-            {
-                if (home.pqsController != null && home.pqsController.transform != null)
-                {
-                    Transform t = home.pqsController.transform.Find("KSC");
-                    PQSCity KSC = t?.GetComponent<PQSCity>();
-                    if (KSC != null) { return KSC; }
-                }
-            }
+            Transform t = home?.pqsController?.transform?.Find("KSC");
+            PQSCity KSC = t?.GetComponent<PQSCity>();
+            if (KSC != null)
+                return KSC;
 
             PQSCity[] cities = Resources.FindObjectsOfTypeAll<PQSCity>();
-            foreach (PQSCity c in cities)
-            {
-                if (c.name == "KSC")
-                {
-                    return c;
-                }
-            }
-
-            return null;
+            return cities.FirstOrDefault(c => c.name == "KSC");
         }
 
-        public static PQSMod_VertexColorMapBlend FindColorMapBlend(CelestialBody body)
+        public static MapSO FindColorMap(CelestialBody body)
         {
-            if (body != null)
-            {
-                if (body.pqsController != null && body.pqsController.transform != null)
-                {
-                    Transform t = body.pqsController.transform.Find("VertexColorMapBlend");
-                    PQSMod_VertexColorMapBlend mod = t?.GetComponent<PQSMod_VertexColorMapBlend>();
-                    if (mod != null) { return mod; }
-                }
-            }
+            Transform t;
 
-            PQSMod[] mods = Resources.FindObjectsOfTypeAll<PQSMod>();
-            foreach (PQSMod m in mods)
-            {
-                if (m is PQSMod_VertexColorMapBlend blend)
-                {
-                    if (m.sphere.PQSModCBTransform.body == body)
-                        return blend;
-                }
-            }
+            t = body?.pqsController?.transform?.Find("VertexColorMapBlend");
+            var mod = t?.GetComponent<PQSMod_VertexColorMapBlend>();
+            if (mod?.vertexColorMap is MapSO map)
+                return map;
 
-            return null;
+            // if VertexColorMapBlend is not there, try with VertexColorMap
+            t = body.pqsController?.transform?.Find("VertexColorMap");
+            var mod2 = t?.GetComponent<PQSMod_VertexColorMap>();
+            if (mod2?.vertexColorMap is MapSO map2)
+                return map2;
+
+            var mods = Resources.FindObjectsOfTypeAll<PQSMod_VertexColorMapBlend>();
+            return mods.FirstOrDefault(m => m.sphere.PQSModCBTransform.body == body)?.vertexColorMap;
         }
 
         public static PQSMod_MapDecalTangent FindKSCMapDecal(CelestialBody home)
         {
-            if (home != null)
-            {
-                if (home.pqsController != null && home.pqsController.transform != null)
-                {
-                    Transform t = home.pqsController.transform.Find("KSC");
-                    PQSMod_MapDecalTangent decal = t?.GetComponent<PQSMod_MapDecalTangent>();
-                    if (decal != null) { return decal; }
-                }
-            }
+            Transform t = home?.pqsController?.transform?.Find("KSC");
+            var decal = t?.GetComponent<PQSMod_MapDecalTangent>();
+            if (decal != null)
+                return decal;
 
             PQSMod_MapDecalTangent[] decals = Resources.FindObjectsOfTypeAll<PQSMod_MapDecalTangent>();
-
             return decals.FirstOrDefault(d => d.name == "KSC");
         }
 
@@ -351,7 +326,7 @@ namespace regexKSP
                     double.TryParse(pqsCity.GetValue("latitude"), out double lat);
                     double.TryParse(pqsCity.GetValue("longitude"), out double lon);
 
-                    ksc.repositionRadial = KSCSwitcher.LLAtoECEF(lat, lon, 0, home.Radius);
+                    ksc.repositionRadial = LLAtoECEF(lat, lon, 0, home.Radius);
                 }
                 if (pqsCity.HasValue("reorientInitialUp"))
                 {
@@ -421,20 +396,43 @@ namespace regexKSP
                         }
                         else
                         {
-                            // parse color from color map
-                            PQSMod_VertexColorMapBlend mod = FindColorMapBlend(home);
-                            double y = ksc.lat / Math.PI + 0.5;
-                            double x = ksc.lon / Math.PI * 0.5;
-                            col = mod.vertexColorMap.GetPixelColor(x, y);
+                            // GetPixelColor(int x, int y) returns the color of the pixel of coordinates (x,y),
+                            // where (0,0) identifies the bottom right corner and (width, height) matches the top left corner;
+                            // KSP maps are both horizontally and vertically flipped, and longitude has a 1/4 width offset;
+                            // maps are flipped vertically again when stored in MAPSO;
+                            // therefore:
+                            // latitude = +90 =>    y = height
+                            // latitude =   0 =>    y = height/2
+                            // latitude = -90 =>    y = 0
+                            // and:
+                            // longitude = -180 =>    x = 3/4 * width
+                            // longitude =  -90 =>    x = 1/2 * width
+                            // longitude =    0 =>    x = 1/4 * width
+                            // longitude =  +90 =>    x = 0
+                            // longitude = +180 =>    x = 3/4 * width
 
-                            Debug.Log($"[KSCSwitcher] parsed {col} from color map at {x}, {y}");
+                            // parse color from color map
+                            if(FindColorMap(home) is MapSO texture)
+                            {
+                                int x = Convert.ToInt32((90 - ksc.lon) / 360 * texture.Width);
+                                int y = Convert.ToInt32((90 + ksc.lat) / 180 * texture.Height);
+
+                                x = Mathf.Clamp(x, 0, texture.Width);
+                                y = Mathf.Clamp(y, 0, texture.Height);
+
+                                col = texture.GetPixelColor(x, y) * 2f;
+                                Debug.Log($"[KSCSwitcher] parsed {col} from color map at {x}, {y}");
+                            }
                         }
 
                         // change grass color
-                        Material[] materials = Resources.FindObjectsOfTypeAll<Material>().Where(m => m.shader.name.Contains("KSC")).ToArray();
-                        for (int i = materials.Length; i-- > 0;)
+                        if(col != null)
                         {
-                            materials[i].SetColor("_GrassColor", col);
+                            Material[] materials = Resources.FindObjectsOfTypeAll<Material>().Where(m => m.shader.name.Contains("KSC")).ToArray();
+                            for (int i = materials.Length; i-- > 0;)
+                            {
+                                materials[i].SetColor("_GrassColor", col);
+                            }
                         }
                     }
                 }
@@ -498,7 +496,7 @@ namespace regexKSP
                     double.TryParse(pqsDecal.GetValue("latitude"), out double lat);
                     double.TryParse(pqsDecal.GetValue("longitude"), out double lon);
 
-                    decal.position = KSCSwitcher.LLAtoECEF(lat, lon, 0, home.Radius);
+                    decal.position = LLAtoECEF(lat, lon, 0, home.Radius);
                 }
                 print("KSCSwitcher changed MapDecal_Tangent");
 
