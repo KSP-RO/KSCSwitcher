@@ -313,6 +313,10 @@ namespace regexKSP
         }
 
         public static bool SetStartingSite(ConfigNode KSC)
+        {
+            bool b = SetSite(KSC);
+            FloatingOrigin.SetOffset(FindKSC(KSCBody).transform.position);
+            return b;
         }
 
         public static bool SetSite(ConfigNode KSC)
@@ -440,8 +444,12 @@ namespace regexKSP
                 hasChanged = true;
                 ksc.OnSetup();
                 ksc.OnPostSetup();
-                SpaceCenter.Instance.transform.localPosition = ksc.transform.localPosition;
-                SpaceCenter.Instance.transform.localRotation = ksc.transform.localRotation;
+
+                // Move the SpaceCenter
+                Transform spaceCenterTransform = SpaceCenter.Instance.transform;
+                Transform kscTransform = ksc.transform;
+                spaceCenterTransform.localPosition = kscTransform.localPosition;
+                spaceCenterTransform.localRotation = kscTransform.localRotation;
             }
             else
             {
