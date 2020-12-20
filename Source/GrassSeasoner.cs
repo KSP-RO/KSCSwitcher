@@ -8,21 +8,13 @@ namespace regexKSP
     {
         public static Material[] KSCGrassMaterials { get; private set; } = null;
         public static GrassSeasoner Instance;
-        private Color originalGrassColor;
         public static Color GroundColor
         {
             get
             {
-                if (Instance?.originalGrassColor is Color col)
-                {
-                    return col;
-                }
-                else if (TryParseGroundColor(KSCSwitcher.KSCBody, KSCSwitcher.FindKSC().lat, KSCSwitcher.FindKSC().lon, out col))
-                {
-                    return col;
-                }
-
-                return new Color();
+                var pqsCity = KSCLoader.instance.Sites.GetSiteByName(KSCLoader.instance.Sites.lastSite);
+                TryGetKSCGrassColor(KSCSwitcher.KSCBody, pqsCity, out Color col);
+                return col;
             }
         }
 
