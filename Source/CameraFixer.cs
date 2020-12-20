@@ -34,7 +34,7 @@ namespace regexKSP
     public class CameraFixer : MonoBehaviour
     {
         public static bool ready = false;
-        private static bool? _hasKopernicus = false;
+        private static bool? _hasKopernicus = null;
 
         public static bool FoundKopernicus
         {

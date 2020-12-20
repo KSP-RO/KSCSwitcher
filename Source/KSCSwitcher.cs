@@ -257,25 +257,6 @@ namespace regexKSP
             return cities.FirstOrDefault(c => c.name == "KSC");
         }
 
-        public static MapSO FindColorMap(CelestialBody body)
-        {
-            Transform t;
-
-            t = body?.pqsController?.transform?.Find("VertexColorMapBlend");
-            var mod = t?.GetComponent<PQSMod_VertexColorMapBlend>();
-            if (mod?.vertexColorMap is MapSO map)
-                return map;
-
-            // if VertexColorMapBlend is not there, try with VertexColorMap
-            t = body.pqsController?.transform?.Find("VertexColorMap");
-            var mod2 = t?.GetComponent<PQSMod_VertexColorMap>();
-            if (mod2?.vertexColorMap is MapSO map2)
-                return map2;
-
-            var mods = Resources.FindObjectsOfTypeAll<PQSMod_VertexColorMapBlend>();
-            return mods.FirstOrDefault(m => m.sphere.PQSModCBTransform.body == body)?.vertexColorMap;
-        }
-
         public static PQSMod_MapDecalTangent FindKSCMapDecal(CelestialBody home)
         {
             Transform t = home?.pqsController?.transform?.Find("KSC");
@@ -307,11 +288,12 @@ namespace regexKSP
             CelestialBody home = KSCBody;
 
             PQSCity ksc = FindKSC(home);
+
             if (ksc != null)
             {
                 if (pqsCity.HasValue("KEYname"))
                 {
-                    if (!(ksc.name.Equals(pqsCity.GetValue("KEYname"))))
+                    if (!ksc.name.Equals(pqsCity.GetValue("KEYname")))
                     {
                         Debug.Log("KSCSwitcher: Could not retrieve KSC to move, reporting failure and moving on.");
                         return false;
@@ -385,56 +367,10 @@ namespace regexKSP
                     }
                 }
                 ksc.Orientate();
-                if(pqsCity.HasValue("changeGrassColor"))
+
+                if(GrassSeasoner.TryGetKSCGrassColor(home, ksc, pqsCity, out Color col))
                 {
-                    if (bool.TryParse(pqsCity.GetValue("changeGrassColor"), out btmp) && btmp)
-                    {
-                        Color col = new Color();
-                        if (pqsCity.HasValue("grassColor") && pqsCity.TryGetValue("grassColor", ref col))
-                        {
-                            Debug.Log($"[KSCSwitcher] setting KSC grass color to {col} from config");
-                        }
-                        else
-                        {
-                            // GetPixelColor(int x, int y) returns the color of the pixel of coordinates (x,y),
-                            // where (0,0) identifies the bottom right corner and (width, height) matches the top left corner;
-                            // KSP maps are both horizontally and vertically flipped, and longitude has a 1/4 width offset;
-                            // maps are flipped vertically again when stored in MAPSO;
-                            // therefore:
-                            // latitude = +90 =>    y = height
-                            // latitude =   0 =>    y = height/2
-                            // latitude = -90 =>    y = 0
-                            // and:
-                            // longitude = -180 =>    x = 3/4 * width
-                            // longitude =  -90 =>    x = 1/2 * width
-                            // longitude =    0 =>    x = 1/4 * width
-                            // longitude =  +90 =>    x = 0
-                            // longitude = +180 =>    x = 3/4 * width
-
-                            // parse color from color map
-                            if(FindColorMap(home) is MapSO texture)
-                            {
-                                int x = Convert.ToInt32((90 - ksc.lon) / 360 * texture.Width);
-                                int y = Convert.ToInt32((90 + ksc.lat) / 180 * texture.Height);
-
-                                x = Mathf.Clamp(x, 0, texture.Width);
-                                y = Mathf.Clamp(y, 0, texture.Height);
-
-                                col = texture.GetPixelColor(x, y) * 2f;
-                                Debug.Log($"[KSCSwitcher] parsed {col} from color map at {x}, {y}");
-                            }
-                        }
-
-                        // change grass color
-                        if(col != null)
-                        {
-                            Material[] materials = Resources.FindObjectsOfTypeAll<Material>().Where(m => m.shader.name.Contains("KSC")).ToArray();
-                            for (int i = materials.Length; i-- > 0;)
-                            {
-                                materials[i].SetColor("_GrassColor", col);
-                            }
-                        }
-                    }
+                    GrassSeasoner.SetGrassColor(col);
                 }
 
                 print("KSCSwitcher changed PQSCity");

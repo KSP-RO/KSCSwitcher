@@ -64,6 +64,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GrassSeasoner.cs" />
     <Compile Include="KSCLoader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="KSCSwitcher.cs" />
