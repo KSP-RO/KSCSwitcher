@@ -374,9 +374,8 @@ namespace regexKSP
                         ksc.reorientFinalAngle = ftmp;
                     }
                 }
-                ksc.Orientate();
 
-                if(GrassSeasoner.TryGetKSCGrassColor(home, ksc, pqsCity, out Color col))
+                if(GrassSeasoner.TryGetKSCGrassColor(home, pqsCity, out Color col))
                 {
                     GrassSeasoner.SetGrassColor(col);
                 }

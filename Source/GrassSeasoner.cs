@@ -36,7 +36,7 @@ namespace regexKSP
             }
         }
 
-        public static bool TryGetKSCGrassColor(CelestialBody home, PQSCity ksc, ConfigNode pqsCity, out Color col)
+        public static bool TryGetKSCGrassColor(CelestialBody home, ConfigNode pqsCity, out Color col)
         {
             col = new Color();
             if (pqsCity.HasValue("changeGrassColor"))
@@ -51,9 +51,10 @@ namespace regexKSP
                             return true;
                         }
                     }
-                    else if (TryParseGroundColor(home, ksc.lat, ksc.lon, out col, 2f))
+                    else if (double.TryParse(pqsCity.GetValue("latitude"), out double lat) && double.TryParse(pqsCity.GetValue("longitude"), out double lon))
                     {
-                        return true;
+                        if(TryParseGroundColor(home, lat, lon, out col, 2f))
+                            return true;
                     }
                 }
             }
