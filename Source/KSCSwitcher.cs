@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using UniLinq;
 using UnityEngine;
 
 /******************************************************************************
@@ -52,23 +52,40 @@ namespace regexKSP
         private GUIStyle bStyle = null;
         private GUIStyle siteText = null;
         private GUIStyle infoLabel = null;
-        private CelestialBody KSCBody = null;
+        private CelestialBody kscBody = null;
+        public static CelestialBody KSCBody
+        {
+            get
+            {
+                CelestialBody home = Planetarium.fetch?.Home;
+                if (home == null)
+                {
+                    home = FlightGlobals.Bodies.Find(body => body.isHomeWorld);
+                    if (home == null)
+                    {
+                        throw new UnityException("KSCSwitcher: Could not find the homeworld!");
+                    }
+                }
+
+                return home;
+            }
+        }
 
         public void Start()
         {
             showWindow = false;
             scrollPosition = Vector2.zero;
-            siteLocations = KSCLoader.instance.Sites.getSitesGeographicalList();
-            if (KSCBody == null)
+            siteLocations = KSCLoader.instance.Sites.GetSitesGeographicalList();
+            if (kscBody == null)
             {
-                KSCBody = getKSCBody();
+                kscBody = KSCBody;
             }
-            if (KSCLoader.instance.Sites.lastSite.Length > 0)
+            if (!string.IsNullOrEmpty(KSCLoader.instance.Sites.lastSite))
             {
                 activeSite = KSCLoader.instance.Sites.lastSite;
                 print("KSCSwitcher set the active site to the last site of " + activeSite);
             }
-            else if (KSCLoader.instance.Sites.defaultSite.Length > 0)
+            else if (!string.IsNullOrEmpty(KSCLoader.instance.Sites.defaultSite))
             {
                 activeSite = KSCLoader.instance.Sites.defaultSite;
                 print("KSCSwitcher set the active site to the default site of " + activeSite);
@@ -77,7 +94,7 @@ namespace regexKSP
             {
                 print("KSCSwitcher could not set the active site");
             }
-            loadTextures();
+            LoadTextures();
             print("KSCSwitcher initialized");
         }
 
@@ -92,14 +109,16 @@ namespace regexKSP
 
             if (Event.current.type == EventType.Repaint || Event.current.isMouse)
             {
-                onDraw();
+                OnDraw();
             }
             GUI.skin = HighLogic.Skin;
             if (bStyle == null)
             {
-                bStyle = new GUIStyle(GUI.skin.button);
-                bStyle.padding = new RectOffset();
-                bStyle.contentOffset = new Vector2();
+                bStyle = new GUIStyle(GUI.skin.button)
+                {
+                    padding = new RectOffset(),
+                    contentOffset = new Vector2()
+                };
             }
             if (oldButton)
             {
@@ -131,14 +150,13 @@ namespace regexKSP
                 }
                 scrollPosition = GUILayout.BeginScrollView(scrollPosition, GUILayout.Width(300), GUILayout.Height(400));
                 Color defColor = GUI.color;
-                bool isActiveSite = false;
                 foreach (KeyValuePair<string, LaunchSite> kvp in siteLocations)
                 {
-                    isActiveSite = kvp.Value.name.Equals(activeSite);
+                    bool isActiveSite = kvp.Value.name.Equals(activeSite);
                     GUILayout.BeginHorizontal();
                     if (GUILayout.Button(magButtonNormal, bStyle, GUILayout.MaxWidth(28)))
                     {
-                        focusOnSite(kvp.Value.geographicLocation);
+                        FocusOnSite(kvp.Value.geographicLocation);
                     }
                     if (isActiveSite)
                     {
@@ -152,7 +170,7 @@ namespace regexKSP
                         }
                         else
                         {
-                            setSite(kvp.Value);
+                            SetSite(kvp.Value);
                         }
                     }
                     GUI.contentColor = defColor;
@@ -180,19 +198,18 @@ namespace regexKSP
             }
         }
 
-        public void onDraw()
+        public void OnDraw()
         {
-            if (siteLocations.Count < 1 || lsTexture == null || !showSites || !iconDisplayDistance()) { return; }
+            if (siteLocations.Count < 1 || lsTexture == null || !showSites || !IconDisplayDistance()) { return; }
 
-            CelestialBody Kerbin = KSCBody;
-            bool isActiveSite = false;
+            CelestialBody Kerbin = kscBody;
             foreach (KeyValuePair<string, LaunchSite> kvp in siteLocations)
             {
                 Camera camera = PlanetariumCamera.Camera;
                 Vector3d point = Kerbin.GetWorldSurfacePosition(kvp.Value.geographicLocation.x, kvp.Value.geographicLocation.y, 0);
                 if (!IsOccluded(point, Kerbin))
                 {
-                    isActiveSite = kvp.Value.name.Equals(activeSite);
+                    bool isActiveSite = kvp.Value.name.Equals(activeSite);
                     point = ScaledSpace.LocalToScaledSpace(point);
                     point = camera.WorldToScreenPoint(point);
                     Rect iconBound = new Rect((float)point.x, (float)(Screen.height - point.y), 28f, 28f);
@@ -216,7 +233,7 @@ namespace regexKSP
                             }
                             else
                             {
-                                setSite(kvp.Value);
+                                SetSite(kvp.Value);
                             }
                         }
                     }
@@ -224,37 +241,20 @@ namespace regexKSP
             }
         }
 
-        public static CelestialBody getKSCBody()
+        public static PQSCity FindKSC()
         {
-            CelestialBody home = null;
-            if (Planetarium.fetch != null)
-            {
-                home = Planetarium.fetch.Home;
-            }
-            if (home == null)
-            {
-                home = FlightGlobals.Bodies.Find(body => body.isHomeWorld == true);
-                if (home == null)
-                {
-                    throw new UnityException("KSCSwitcher: Could not find the homeworld!");
-                }
-            }
-
-            return home;
+            return FindKSC(KSCBody);
         }
 
-        public static PQSCity findKSC(CelestialBody home)
+        public static PQSCity FindKSC(CelestialBody home)
         {
             if (home != null)
             {
                 if (home.pqsController != null && home.pqsController.transform != null)
                 {
                     Transform t = home.pqsController.transform.Find("KSC");
-                    if (t != null)
-                    {
-                        PQSCity KSC = (PQSCity)t.GetComponent(typeof(PQSCity));
-                        if (KSC != null) { return KSC; }
-                    }
+                    PQSCity KSC = t?.GetComponent<PQSCity>();
+                    if (KSC != null) { return KSC; }
                 }
             }
 
@@ -270,62 +270,52 @@ namespace regexKSP
             return null;
         }
 
-        public static PQSMod_VertexColorMapBlend findColorMapBlend(CelestialBody body)
+        public static PQSMod_VertexColorMapBlend FindColorMapBlend(CelestialBody body)
         {
             if (body != null)
             {
                 if (body.pqsController != null && body.pqsController.transform != null)
                 {
                     Transform t = body.pqsController.transform.Find("VertexColorMapBlend");
-                    if(t!= null)
-                    {
-                        PQSMod_VertexColorMapBlend mod = t.GetComponent<PQSMod_VertexColorMapBlend>();
-                        if (mod != null) { return mod; }
-                    }
+                    PQSMod_VertexColorMapBlend mod = t?.GetComponent<PQSMod_VertexColorMapBlend>();
+                    if (mod != null) { return mod; }
                 }
             }
 
             PQSMod[] mods = Resources.FindObjectsOfTypeAll<PQSMod>();
             foreach (PQSMod m in mods)
             {
-                if (m is PQSMod_VertexColorMapBlend)
+                if (m is PQSMod_VertexColorMapBlend blend)
                 {
                     if (m.sphere.PQSModCBTransform.body == body)
-                        return (PQSMod_VertexColorMapBlend)m;
+                        return blend;
                 }
             }
 
             return null;
         }
 
-        public static PQSMod_MapDecalTangent findKSCMapDecal(CelestialBody home)
+        public static PQSMod_MapDecalTangent FindKSCMapDecal(CelestialBody home)
         {
             if (home != null)
             {
                 if (home.pqsController != null && home.pqsController.transform != null)
                 {
                     Transform t = home.pqsController.transform.Find("KSC");
-                    if (t != null)
-                    {
-                        PQSMod_MapDecalTangent decal = (PQSMod_MapDecalTangent)t.GetComponent(typeof(PQSMod_MapDecalTangent));
-                        if (decal != null) { return decal; }
-                    }
+                    PQSMod_MapDecalTangent decal = t?.GetComponent<PQSMod_MapDecalTangent>();
+                    if (decal != null) { return decal; }
                 }
             }
 
             PQSMod_MapDecalTangent[] decals = Resources.FindObjectsOfTypeAll<PQSMod_MapDecalTangent>();
-            foreach (PQSMod_MapDecalTangent d in decals)
-            {
-                if (d.name == "KSC")
-                {
-                    return d;
-                }
-            }
 
-            return null;
+            return decals.FirstOrDefault(d => d.name == "KSC");
         }
 
-        public static bool setSite(ConfigNode KSC)
+        public static bool SetStartingSite(ConfigNode KSC)
+        }
+
+        public static bool SetSite(ConfigNode KSC)
         {
             bool hasChanged = false;
             double dtmp;
@@ -335,9 +325,9 @@ namespace regexKSP
             ConfigNode pqsCity = KSC.GetNode("PQSCity");
             if (pqsCity == null) { return false; }
             ConfigNode pqsDecal = KSC.GetNode("PQSMod_MapDecalTangent");
-            CelestialBody home = getKSCBody();
+            CelestialBody home = KSCBody;
 
-            PQSCity ksc = findKSC(home);
+            PQSCity ksc = FindKSC(home);
             if (ksc != null)
             {
                 if (pqsCity.HasValue("KEYname"))
@@ -354,9 +344,8 @@ namespace regexKSP
                 }
                 if (pqsCity.HasValue("latitude") && pqsCity.HasValue("longitude"))
                 {
-                    double lat, lon;
-                    double.TryParse(pqsCity.GetValue("latitude"), out lat);
-                    double.TryParse(pqsCity.GetValue("longitude"), out lon);
+                    double.TryParse(pqsCity.GetValue("latitude"), out double lat);
+                    double.TryParse(pqsCity.GetValue("longitude"), out double lon);
 
                     ksc.repositionRadial = KSCSwitcher.LLAtoECEF(lat, lon, 0, home.Radius);
                 }
@@ -429,7 +418,7 @@ namespace regexKSP
                         else
                         {
                             // parse color from color map
-                            PQSMod_VertexColorMapBlend mod = findColorMapBlend(home);
+                            PQSMod_VertexColorMapBlend mod = FindColorMapBlend(home);
                             double y = ksc.lat / Math.PI + 0.5;
                             double x = ksc.lon / Math.PI * 0.5;
                             col = mod.vertexColorMap.GetPixelColor(x, y);
@@ -460,7 +449,7 @@ namespace regexKSP
                 return false;
             }
 
-            PQSMod_MapDecalTangent decal = findKSCMapDecal (home);
+            PQSMod_MapDecalTangent decal = FindKSCMapDecal (home);
             if (decal != null && pqsDecal != null)
             {
                 // KSC Flat area
@@ -498,9 +487,8 @@ namespace regexKSP
                 }
                 if (pqsDecal.HasValue("latitude") && pqsDecal.HasValue("longitude"))
                 {
-                    double lat, lon;
-                    double.TryParse(pqsDecal.GetValue("latitude"), out lat);
-                    double.TryParse(pqsDecal.GetValue("longitude"), out lon);
+                    double.TryParse(pqsDecal.GetValue("latitude"), out double lat);
+                    double.TryParse(pqsDecal.GetValue("longitude"), out double lon);
 
                     decal.position = KSCSwitcher.LLAtoECEF(lat, lon, 0, home.Radius);
                 }
@@ -523,12 +511,12 @@ namespace regexKSP
             return hasChanged;
         }
 
-        private void setSite(LaunchSite newSite)
+        private void SetSite(LaunchSite newSite)
         {
-            ConfigNode site = KSCLoader.instance.Sites.getSiteByName(newSite.name);
-            if (site == null) { return; }
+            ConfigNode site = KSCLoader.instance.Sites.GetSiteByName(newSite.name);
+            if (site == null) return;
 
-            if (KSCSwitcher.setSite(site))
+            if (SetSite(site))
             {
                 activeSite = newSite.name;
                 ScreenMessages.PostScreenMessage("Launch site changed to " + newSite.displayName, 2.5f, ScreenMessageStyle.LOWER_CENTER);
@@ -536,7 +524,7 @@ namespace regexKSP
             }
         }
 
-        private void focusOnSite(Vector2d loc)
+        private void FocusOnSite(Vector2d loc)
         {
             Debug.Log("Focusing on site");
             PlanetariumCamera camera = PlanetariumCamera.fetch;
@@ -560,7 +548,7 @@ namespace regexKSP
             return true;
         }
 
-        private void loadTextures()
+        private void LoadTextures()
         {
             Texture2D white = null;
             // hard-coded texture path because why not.
@@ -605,7 +593,7 @@ namespace regexKSP
             infoLabel.wordWrap = true;
         }
 
-        private bool iconDisplayDistance()
+        private bool IconDisplayDistance()
         {
             if (MapView.MapCamera.target.celestialBody == null) { return false; }
             CelestialBody home = KSCBody;

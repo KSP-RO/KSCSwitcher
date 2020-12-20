@@ -41,13 +41,13 @@ namespace regexKSP
 
         public LaunchSite()
         {
-            this.name = "";
-            this.displayName = "";
-            this.PQSName = "";
-            this.description = "";
-            this.availableFromUT = 0.0;
-            this.availableUntilUT = 0.0;
-            this.geographicLocation = Vector2d.zero;
+            name = "";
+            displayName = "";
+            PQSName = "";
+            description = "";
+            availableFromUT = 0.0;
+            availableUntilUT = 0.0;
+            geographicLocation = Vector2d.zero;
         }
     }
 }
