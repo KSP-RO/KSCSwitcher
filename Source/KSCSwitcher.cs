@@ -389,8 +389,9 @@ namespace regexKSP
                 // Move the SpaceCenter
                 Transform spaceCenterTransform = SpaceCenter.Instance.transform;
                 Transform kscTransform = ksc.transform;
-                spaceCenterTransform.localPosition = kscTransform.localPosition;
-                spaceCenterTransform.localRotation = kscTransform.localRotation;
+                spaceCenterTransform.position = kscTransform.position;
+                spaceCenterTransform.rotation = kscTransform.rotation;
+                SpaceCenter.Instance.Start();
             }
             else
             {
