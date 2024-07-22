@@ -12,7 +12,8 @@ namespace regexKSP
         {
             get
             {
-                var pqsCity = KSCLoader.instance.Sites.GetSiteByName(KSCLoader.instance.Sites.lastSite);
+                ConfigNode kscSite = KSCLoader.instance.Sites.GetSiteByName(KSCLoader.instance.Sites.lastSite);
+                ConfigNode pqsCity = kscSite?.GetNode("PQSCity");
                 TryGetKSCGrassColor(KSCSwitcher.KSCBody, pqsCity, out Color col);
                 return col;
             }
@@ -116,15 +117,19 @@ namespace regexKSP
     {
         public void Start()
         {
+            Debug.Log($"KSCSwitcher editor grass fixer start");
             GameObject scenery = GameObject.Find("VABscenery") ?? GameObject.Find("SPHscenery");
             Material material = scenery?.GetChild("ksc_terrain")?.GetComponent<Renderer>()?.sharedMaterial;
 
             if (material == null)
-            {
                 return;
-            }
 
-            material.color = GrassSeasoner.GroundColor * 1.5f;
+            Color c = GrassSeasoner.GroundColor;
+            if (c.maxColorComponent == 0)
+                return;
+
+            material.color = c * 1.5f;
+            Debug.Log($"KSCSwitcher editor grass fixer end");
         }
     }
 }
