@@ -84,6 +84,7 @@ namespace regexKSP
                 col = texture.GetPixelColor(x, y);
                 Debug.Log($"KSCSwitcher parsed {col} from color map at {x}, {y}");
                 col *= colorMult;
+                col.a = 1;
                 return true;
             }
 
