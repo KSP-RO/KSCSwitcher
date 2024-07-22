@@ -68,7 +68,7 @@ namespace regexKSP
 
                 if (ksc == null)
                 {
-                    Debug.Log("KSCSwitcher could not find KSC to fix the camera.");
+                    Debug.Log("[KSCSwitcher] could not find KSC to fix the camera.");
                     return;
                 }
                 foreach (var cam in Resources.FindObjectsOfTypeAll<SpaceCenterCamera2>())
@@ -78,7 +78,7 @@ namespace regexKSP
                         CelestialBody kerbin = FlightGlobals.Bodies.Find(body => body.name == ksc.sphere.name);
                         if (kerbin == null)
                         {
-                            Debug.Log("KSCSwitcher could not find find the CelestialBody specified as KSC's sphere.");
+                            Debug.Log("[KSCSwitcher] could not find find the CelestialBody specified as KSC's sphere.");
                             return;
                         }
                         double nomHeight = kerbin.pqsController.GetSurfaceHeight(ksc.repositionRadial.normalized) - kerbin.Radius;
@@ -93,7 +93,7 @@ namespace regexKSP
                         cam.altitudeInitial = 0f - (float)ksc.repositionRadiusOffset;
                     }
                     cam.ResetCamera();
-                    Debug.Log("KSCSwitcher fixed the Space Center camera.");
+                    Debug.Log("[KSCSwitcher] fixed the Space Center camera.");
                 }
             }
         }

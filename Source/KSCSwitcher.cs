@@ -277,7 +277,7 @@ namespace regexKSP
             {
                 FloatingOrigin.SetOffset(PSystemSetup.Instance.SCTransform.position);
                 LastFloatingOriginKSC = KSC.GetValue("name");
-                Debug.Log("KSCSwitcher set floating point origin offset");
+                Debug.Log("[KSCSwitcher] set floating point origin offset");
             }
 
             return b;
@@ -303,7 +303,7 @@ namespace regexKSP
                 {
                     if (!ksc.name.Equals(pqsCity.GetValue("KEYname")))
                     {
-                        Debug.Log("KSCSwitcher: Could not retrieve KSC to move, reporting failure and moving on.");
+                        Debug.Log("[KSCSwitcher] Could not retrieve KSC to move, reporting failure and moving on.");
                         return false;
                     }
                 }
@@ -375,7 +375,7 @@ namespace regexKSP
                     }
                 }
 
-                if(GrassSeasoner.TryGetKSCGrassColor(home, pqsCity, out Color col))
+                if (GrassSeasoner.TryGetKSCGrassColor(home, pqsCity, out Color col))
                 {
                     GrassSeasoner.SetGrassColor(col);
                 }
@@ -395,7 +395,7 @@ namespace regexKSP
             }
             else
             {
-                Debug.LogError("KSCSwitcher: Could not retrieve KSC to move, reporting failure and moving on.");
+                Debug.LogError("[KSCSwitcher] Could not retrieve KSC to move, reporting failure and moving on.");
                 return false;
             }
 
@@ -476,7 +476,7 @@ namespace regexKSP
 
         private void FocusOnSite(Vector2d loc)
         {
-            Debug.Log("Focusing on site");
+            Debug.Log("[KSCSwitcher] Focusing on site");
             PlanetariumCamera camera = PlanetariumCamera.fetch;
             CelestialBody Kerbin = KSCBody;
             Vector3d point = ScaledSpace.LocalToScaledSpace(Kerbin.GetWorldSurfacePosition(loc.x, loc.y, 0));
@@ -517,9 +517,9 @@ namespace regexKSP
                 eyeButtonHighlight = GameDatabase.Instance.GetTexture("KSCSwitcher/Plugins/Icons/eye-highlight", false);
                 magButtonNormal = GameDatabase.Instance.GetTexture("KSCSwitcher/Plugins/Icons/magnifier-normal", false);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Debug.Log("Could not load button textures for KSCSwitcher, reverting to old button style: " + e.StackTrace);
+                Debug.LogError("[KSCSwitcher] Could not load button textures for KSCSwitcher, reverting to old button style: " + ex);
                 oldButton = true;
             }
 

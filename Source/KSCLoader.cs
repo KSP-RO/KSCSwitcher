@@ -45,7 +45,7 @@ namespace regexKSP
                     else
                     {
                         KSCSwitcher.SetSiteAndResetCamera(site);
-                        Debug.Log("KSCSwitcher set the launch site to the last site, " + l.lastSite);
+                        Debug.Log("[KSCSwitcher] set the launch site to the last site, " + l.lastSite);
                         return;
                     }
                 }
@@ -61,13 +61,13 @@ namespace regexKSP
                         ConfigNode site = Sites.GetSiteByName(Sites.defaultSite);
                         if (site == null)
                         {
-                            Debug.LogError("KSCSwitcher found a default site name but could not retrieve the site config: " + Sites.defaultSite);
+                            Debug.LogError("[KSCSwitcher] found a default site name but could not retrieve the site config: " + Sites.defaultSite);
                             return;
                         }
                         else
                         {
                             KSCSwitcher.SetSiteAndResetCamera(site);
-                            Debug.Log("KSCSwitcher set the initial launch site to the default" + Sites.defaultSite);
+                            Debug.Log("[KSCSwitcher] set the initial launch site to the default" + Sites.defaultSite);
                         }
                     }
                 }

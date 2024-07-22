@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace regexKSP
 {
-    public class GrassSeasoner
+    public static class GrassSeasoner
     {
         public static Material[] KSCGrassMaterials { get; private set; } = null;
-        public static GrassSeasoner Instance;
+
         public static Color GroundColor
         {
             get
@@ -32,23 +32,21 @@ namespace regexKSP
         public static bool TryGetKSCGrassColor(CelestialBody home, ConfigNode pqsCity, out Color col)
         {
             col = new Color();
-            if (pqsCity.HasValue("changeGrassColor"))
+            if (pqsCity?.HasValue("changeGrassColor") ?? false &&
+                bool.TryParse(pqsCity.GetValue("changeGrassColor"), out bool btmp) && btmp)
             {
-                if (bool.TryParse(pqsCity.GetValue("changeGrassColor"), out bool btmp) && btmp)
+                if (pqsCity.HasValue("grassColor"))
                 {
-                    if (pqsCity.HasValue("grassColor"))
+                    if (pqsCity.TryGetValue("grassColor", ref col))
                     {
-                        if (pqsCity.TryGetValue("grassColor", ref col))
-                        {
-                            Debug.Log($"KSCSwitcher found KSC grass color {col} from config");
-                            return true;
-                        }
+                        Debug.Log($"[KSCSwitcher] found KSC grass color {col} from config");
+                        return true;
                     }
-                    else if (double.TryParse(pqsCity.GetValue("latitude"), out double lat) && double.TryParse(pqsCity.GetValue("longitude"), out double lon))
-                    {
-                        if(TryParseGroundColor(home, lat, lon, out col, 2f))
-                            return true;
-                    }
+                }
+                else if (double.TryParse(pqsCity.GetValue("latitude"), out double lat) && double.TryParse(pqsCity.GetValue("longitude"), out double lon))
+                {
+                    if (TryParseGroundColor(home, lat, lon, out col, 2f))
+                        return true;
                 }
             }
             return false;
@@ -83,7 +81,7 @@ namespace regexKSP
                 y = Mathf.Clamp(y, 0, texture.Height);
 
                 col = texture.GetPixelColor(x, y);
-                Debug.Log($"KSCSwitcher parsed {col} from color map at {x}, {y}");
+                Debug.Log($"[KSCSwitcher] parsed {col} from color map at {x}, {y}");
                 col *= colorMult;
                 col.a = 1;
                 return true;
@@ -117,7 +115,7 @@ namespace regexKSP
     {
         public void Start()
         {
-            Debug.Log($"KSCSwitcher editor grass fixer start");
+            Debug.Log($"[KSCSwitcher] editor grass fixer start");
             GameObject scenery = GameObject.Find("VABscenery") ?? GameObject.Find("SPHscenery");
             Material material = scenery?.GetChild("ksc_terrain")?.GetComponent<Renderer>()?.sharedMaterial;
 
@@ -129,7 +127,7 @@ namespace regexKSP
                 return;
 
             material.color = c * 1.5f;
-            Debug.Log($"KSCSwitcher editor grass fixer end");
+            Debug.Log($"[KSCSwitcher] editor grass fixer end");
         }
     }
 }
