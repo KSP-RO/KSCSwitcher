@@ -110,6 +110,9 @@ namespace regexKSP
         }
     }
 
+    /// <summary>
+    /// Colors the terrain beyond the KSC facilities. The color of the statics is applied through KSCSwitcher.SetSite() instead.
+    /// </summary>
     [KSPAddon(KSPAddon.Startup.EditorAny, false)]
     public class EditorGrassFixer : MonoBehaviour
     {
@@ -126,7 +129,7 @@ namespace regexKSP
             if (c.maxColorComponent == 0)
                 return;
 
-            material.color = c * 1.5f;
+            material.color = c;
             Debug.Log($"[KSCSwitcher] editor grass fixer end");
         }
     }
