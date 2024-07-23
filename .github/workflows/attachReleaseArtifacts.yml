@@ -54,12 +54,6 @@ jobs:
         with:
           tag: ${{ github.event.release.tag_name }}
           path: ${{ github.workspace }}/GameData/KSCSwitcher/KSCSwitcher.version
-
-      - name: Update Readme
-        uses: KSP-RO/BuildTools/update-version-in-readme@master
-        with:
-          path: ${{ github.workspace }}/README.md
-          tag: ${{ github.event.release.tag_name }}
           
       - name: Update changelog file
         uses: KSP-RO/BuildTools/process-changelog@master
