@@ -83,7 +83,7 @@ namespace regexKSP
                 col = texture.GetPixelColor(x, y);
                 Debug.Log($"[KSCSwitcher] parsed {col} from color map at {x}, {y}");
                 col *= colorMult;
-                col.a = 1;
+                col.a = 0;    // The shader doesn't actually use alpha channel for transparency but something else entirely (specular?)
                 return true;
             }
 
