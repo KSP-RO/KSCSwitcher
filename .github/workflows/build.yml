@@ -45,6 +45,12 @@ jobs:
         with:
           KSP_ZIP_PASSWORD: ${{ secrets.KSP_ZIP_PASSWORD }}
 
+      - name: Update AssemblyInfo
+        uses: KSP-RO/BuildTools/update-assembly-info@master
+        with:
+          path: ${{ github.workspace }}/Source/Properties/AssemblyInfo.cs
+          tag: "2.99.0.0"
+
       - name: Build mod solution
         run: msbuild ${{ github.workspace }}/Source/KSCSwitcher.sln /t:build /restore /p:RestorePackagesConfig=true /p:Configuration=Release /p:ReferencePath="${{ steps.download-assemblies.outputs.ksp-dll-path }}" /p:KSPRoot="${{ env.KSP_ROOT }}"
 
